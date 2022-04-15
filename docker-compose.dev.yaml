@@ -1,0 +1,14 @@
+version: '3.8'
+services:
+    url-shortener-db-dev:
+        image: postgres:14.2-alpine
+        restart: "no"
+        env_file:
+            - ./url-shortener-db/database.env
+        ports:
+            - '5433:5432'
+        volumes:
+            - database-data-dev:/var/lib/postgresql/data/
+            - ./url-shortener-db/init.sql:/docker-entrypoint-initdb.d/create_tables.sql
+volumes:
+    database-data-dev:
