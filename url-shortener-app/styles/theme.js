@@ -9,7 +9,7 @@ const theme = createTheme({
             main: blue[200],
         },
         secondary: {
-            main: purple[200],
+            main: purple[300],
         },
         error: {
             main: red[500],

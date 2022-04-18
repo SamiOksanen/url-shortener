@@ -9,6 +9,7 @@ import Head from 'next/head'
 import { server } from '../config'
 import { WebLinkData } from './api/addlink/[id]'
 import Link from 'next/link'
+import { Alert } from '@mui/material'
 
 const Home: NextPage = () => {
 
@@ -26,7 +27,17 @@ const Home: NextPage = () => {
         if (!targetUrl) {
             setValidationError('Please give a value.');
         } else {
-            setValidationError('');
+            let url;  
+            try {
+                url = new URL(targetUrl);
+                if (url.protocol === "https:") {
+                    setValidationError('');  
+                } else {
+                    setValidationError('Please give a valid HTTPS URL.');
+                }
+            } catch (_) {
+                setValidationError('Please give a valid URL.');  
+            }
         }
     }
 
@@ -43,11 +54,17 @@ const Home: NextPage = () => {
 
     const [webLink, setWebLink]: any = useState(null);
 
+    const [apiError, setApiError] = useState('');
+
     const handleLinkCreation = async () => {
         const res = await fetch(`${server}/api/addlink/${encodeURIComponent(targetUrl)}`);
-        const newLink: WebLinkData = await res.json();
-        setWebLink(newLink);
-        console.log('button clicked: ' + JSON.stringify(newLink));
+        if (res.status === 200) {
+            const newLink: WebLinkData = await res.json();
+            setWebLink(newLink);
+        } else {
+            const error: {message: string} = await res.json();
+            setApiError(error.message);
+        }
     };
 
     return (
@@ -72,6 +89,7 @@ const Home: NextPage = () => {
                             helperText={validationError}
                             error
                             fullWidth
+                            autoComplete="off"
                         /> : <TextField
                             id="target-url"
                             label="Target URL"
@@ -80,6 +98,7 @@ const Home: NextPage = () => {
                             color="secondary"
                             onChange={handleUrlChange}
                             fullWidth
+                            autoComplete="off"
                         />
                     }
                 </Box>
@@ -87,19 +106,20 @@ const Home: NextPage = () => {
                 <Button variant="contained" color="primary" onClick={handleLinkCreation}>
                     Create Link
                 </Button>
-                {webLink && <>
-                <Link href={`/f/${webLink.shortenedlink}`}>
-                    <Typography variant="h3" component="h3" color="primary" gutterBottom>
+                {webLink && !apiError ? <>
+                <Link href={`/f/${webLink.shortenedlink}`} passHref>
+                    <Typography variant="h4" component="h3" color="primary" sx={{cursor: "pointer", mt: 2}} gutterBottom>
                         {server}/f/{webLink.shortenedlink}
                     </Typography>
                 </Link>
-                <Link href={`/linkstatistics/${webLink.weblinkid}`}>
-                    <Typography variant="h3" component="h3" color="primary" gutterBottom>
+                <Link href={`/linkstatistics/${webLink.weblinkid}`} passHref>
+                    <Typography variant="h4" component="h3" color="primary" sx={{cursor: "pointer"}} gutterBottom>
                         {server}/linkstatistics/{webLink.weblinkid}
                     </Typography>
                 </Link>
-                </>
+                </> : <></>
                 }
+                {apiError && <Alert variant="filled" severity="error" sx={{width: '100%', mt: 2}} onClose={() => {setApiError('')}}>{apiError}</Alert>}
             </Box>
         </Container>
     )
